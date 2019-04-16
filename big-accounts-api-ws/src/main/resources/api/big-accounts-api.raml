@@ -1,0 +1,89 @@
+#%RAML 1.0
+baseUri: https://anypoint.mulesoft.com/mocking/api/v1/links/ffe24bda-9777-4a8d-8cd5-43007ee490db/ # 
+version: v1
+title: BIG Accounts API
+
+types:
+  Account: !include datatypes/account.raml
+  AccountNoID : !include datatypes/accountNoID.raml
+
+/customer:
+  /account:
+    get:
+      description: Retrieves accounts based on the given query parameters.
+      queryParameters:
+        accountNumber:
+          required: false
+          type: string
+      responses:
+        400:
+          body:
+            application/json:
+              example: {
+               "message": "Error retrieving data from the Account."
+              }
+        200:
+          description: Returns an array of Account objects in JSON
+          body:
+            application/json:
+              type: Account[]
+              examples:
+                output: !include examples/accountsExample.raml
+    post:
+      body:
+        application/json:
+          type: Account
+          examples: 
+            output: !include examples/accountExample.raml
+      responses:
+        400:
+          body:
+            application/json:
+              example: {
+                "message": "Error creating accounts. Please check the JSON object and make sure it's valid."
+              }
+        201:
+          body:
+            application/json:
+              example: {
+                "message": "Accounts uploaded (but not really)."
+              }
+
+    /{accountNumber}:
+      get:
+        responses:
+          400:
+            body:
+              application/json:
+                example: {
+                "message": "Error retrieving data from the Account."
+                }
+          200:
+            description: Returns an array of Account objects in JSON
+            body:
+              application/json:
+                type: Account
+                examples:
+                  output: !include examples/accountExample.raml
+      
+      delete:
+        responses:
+          200:
+            body:
+              application/json:
+                example: {
+                "message": "Account Deleted successfully."
+                }
+      put:
+        body:
+          application/json:
+            type: Account
+            examples: 
+              output: !include examples/accountExample.raml
+        responses:
+          200:
+            body:
+              application/json:
+                example: {
+                "message": "Account updated successfully."
+                }

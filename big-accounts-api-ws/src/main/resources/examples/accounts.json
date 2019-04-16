@@ -1,0 +1,38 @@
+[
+	{
+		"id": "1",
+		"accountNumber": "CC978213",
+		"accountName": "GenePoint",
+		"address": "345 Shoreline Park",
+		"city": "Mountain View",
+		"state": "CA",
+		"postal": "94043",
+		"country": "USA",
+		"phone": "(650) 867-3450",
+		"type": "Customer - Channel"
+	},
+	{
+		"id": "2",
+		"accountNumber": "CD656092",
+		"accountName": "Burlington Textiles Corp of America",
+		"address": "525 S. Lexington Ave",
+		"city": "Burlington",
+		"state": "NC",
+		"postal": "27215",
+		"country": "USA",
+		"phone": "(336) 222-7000",
+		"type": "Customer - Direct"
+	},
+	{
+		"id": "3",
+		"accountNumber": "CD736025",
+		"accountName": "University of Arizona",
+		"address": "888 N Euclid",
+		"city": "Tucson",
+		"state": "AZ",
+		"postal": "85721",
+		"country": "USA",
+		"phone": "(520) 773-9050",
+		"type": "Customer - Channel"
+	}
+]

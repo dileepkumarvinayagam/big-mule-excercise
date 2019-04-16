@@ -1,0 +1,303 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:spring="http://www.mulesoft.org/schema/mule/spring" xmlns:validation="http://www.mulesoft.org/schema/mule/validation"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd
+http://www.mulesoft.org/schema/mule/spring http://www.mulesoft.org/schema/mule/spring/current/mule-spring.xsd">
+	<flow name="getAllAccountsFlow" doc:id="bfee955a-b0a0-4657-a8e0-1bb26f80e442" >
+		<salesforce:query-all doc:name="Query all" doc:id="8db2f7c4-7e35-49f0-9f26-b2df5768c4b9" config-ref="Salesforce_Config">
+			<salesforce:salesforce-query >SELECT Id, IsDeleted, MasterRecordId, Name, Type, ParentId, BillingStreet, BillingCity, BillingState, BillingPostalCode, BillingCountry, BillingLatitude, BillingLongitude, BillingGeocodeAccuracy, BillingAddress, ShippingStreet, ShippingCity, ShippingState, ShippingPostalCode, ShippingCountry, ShippingLatitude, ShippingLongitude, ShippingGeocodeAccuracy, ShippingAddress, Phone, Fax, AccountNumber, Website, PhotoUrl, Sic, Industry, AnnualRevenue, NumberOfEmployees, Ownership, TickerSymbol, Description, Rating, Site, OwnerId, CreatedDate, CreatedById, LastModifiedDate, LastModifiedById, SystemModstamp, LastActivityDate, LastViewedDate, LastReferencedDate, Jigsaw, JigsawCompanyId, CleanStatus, AccountSource, DunsNumber, Tradestyle, NaicsCode, NaicsDesc, YearStarted, SicDesc, DandbCompanyId, CustomerPriority__c, SLA__c, Active__c, NumberofLocations__c, UpsellOpportunity__c, SLASerialNumber__c, SLAExpirationDate__c FROM Account
+where IsDeleted=false</salesforce:salesforce-query>
+		</salesforce:query-all>
+		<choice doc:name="Choice" doc:id="e05fd1ec-d72f-4a7b-8d9a-5f1b7f00acd6" >
+			<when expression="#[(sizeOf(payload as Array) &gt; 0)]">
+				<ee:transform doc:name="Transform Message" doc:id="a68ee763-0912-468f-aff7-21ef81b55456">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload map ( payload01 , indexOfPayload01 ) -> {
+	accountNumber: payload01.AccountNumber default "",
+	accountName: payload01.Name default "",
+	address: payload01.BillingStreet default "",
+	city: payload01.BillingCity default "",
+	state: payload01.BillingState default "",
+	postal: payload01.BillingPostalCode default "",
+	country: payload01.BillingCountry default "",
+	phone: payload01.Phone default "",
+	"type": payload01.Type default ""
+}]]></ee:set-payload>
+			</ee:message>
+					<ee:variables>
+						<ee:set-variable variableName="httpStatus"><![CDATA['200']]></ee:set-variable>
+					</ee:variables>
+		</ee:transform>
+			</when>
+			<otherwise >
+				<ee:transform doc:name="Transform Message" doc:id="d47df201-5b2b-488c-940a-7e2c3dff3c75" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message:"No Accounts Found."
+}]]></ee:set-payload>
+					</ee:message>
+					<ee:variables >
+						<ee:set-variable variableName="httpStatus" ><![CDATA['200']]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+			</otherwise>
+		</choice>
+	</flow>
+	<flow name="getByAccountNumber" doc:id="6aeb9f7d-436c-4eeb-a6ab-5b9fca958713" >
+		<set-variable value="#[attributes.uriParams.accountNumber]" doc:name="Set Variable" doc:id="357f4569-2d00-4083-ab31-1daca77155d3" variableName="accountNumber"/>
+		<salesforce:query doc:name="Query" doc:id="b965f0a5-3192-4b77-9984-e68fac41d093" config-ref="Salesforce_Config">
+			<salesforce:salesforce-query >SELECT Id, AccountNumber,NAME,BillingStreet,BillingCity,BillingState,BillingPostalCode,BillingCountry, Phone,Type
+FROM Account
+where AccountNumber = ':accountNumber' and IsDeleted=false</salesforce:salesforce-query>
+			<salesforce:parameters ><![CDATA[#[output application/java
+---
+{
+	"accountNumber" : vars.accountNumber default "" as String
+}]]]></salesforce:parameters>
+		</salesforce:query>
+		<choice doc:name="Choice" doc:id="e248c484-8bca-43fe-9c62-4bf667ecd29e" >
+			<when expression="#[(sizeOf(payload as Array) &gt; 0)]">
+				<ee:transform doc:name="Transform Message" doc:id="03928524-1e19-47ae-b226-9c14d7ea2a9f">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	accountNumber: payload.AccountNumber[0] default "",
+	accountName: payload.Name[0] default "",
+	address: payload.BillingStreet[0] default "",
+	city: payload.BillingCity[0] default "",
+	state: payload.BillingState[0] default "",
+	postal: payload.BillingPostalCode[0] default "",
+	country: payload.BillingCountry[0] default "",
+	phone: payload.Phone[0] default "",
+	"type": payload.Type[0] default ""
+}]]></ee:set-payload>
+			</ee:message>
+					<ee:variables >
+						<ee:set-variable variableName="httpStatus" ><![CDATA['200']]></ee:set-variable>
+					</ee:variables>
+		</ee:transform>
+			</when>
+			<otherwise >
+				<ee:transform doc:name="Transform Message" doc:id="db7cfa21-8306-498e-8f60-99204d8144db">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message:"No Accounts found for " ++ vars.accountNumber as String
+}]]></ee:set-payload>
+			</ee:message>
+					<ee:variables >
+						<ee:set-variable variableName="httpStatus" ><![CDATA['200']]></ee:set-variable>
+					</ee:variables>
+		</ee:transform>
+			</otherwise>
+		</choice>
+	</flow>
+	<flow name="postAccount" doc:id="048068e7-6e83-4106-a234-d8dc0c27e27a" >
+		<!--  <http:listener doc:name="POST /customer/account" doc:id="fc08482d-a734-40f1-92d2-41df3e299be7" config-ref="HTTP_Listener_config" path="/customer/account" allowedMethods="POST">
+			<http:response statusCode="#[vars.httpStatus default 200]" />
+			<http:error-response statusCode="#[vars.httpStatus default 500]" />
+		</http:listener> -->
+		<validation:is-not-blank-string doc:name="Is not blank string" doc:id="70e05887-cec1-4515-a1f8-b645d57ec122" value="#[payload.accountNumber]" message='#["AccountNumber can not be null or empty"]'>
+			<error-mapping sourceType="VALIDATION:BLANK_STRING" targetType="APP:INVALID_ACCOUNT_NUMBER" />
+		</validation:is-not-blank-string>
+		<ee:transform doc:name="Transform Message" doc:id="ae765465-7c98-4894-bfe2-7d9fe29fc686" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+[{
+	Name: payload.accountName,
+	Type: payload."type",
+	BillingStreet: payload.address,
+	BillingCity: payload.city,
+	BillingState: payload.state,
+	BillingPostalCode: payload.postal,
+	BillingCountry: payload.country,
+	Phone: payload.phone,
+	AccountNumber: payload.accountNumber
+}]]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<salesforce:create doc:name="Create" doc:id="5b72f582-d3b8-40ee-81b7-550d085658b4" config-ref="Salesforce_Config" type="Account"/>
+		<choice doc:name="Choice" doc:id="bf072447-b34b-4234-b014-0199d8ac0778" >
+			<when expression="#[(sizeOf(payload[0].errors as Array) &gt; 0)]">
+				<ee:transform doc:name="Transform Message" doc:id="04f55ffc-7eb1-4356-b4f8-68ba38b4c052">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"errorMessage": "Error posting account into Salesforce .. ",
+	"errors": payload
+}]]></ee:set-payload>
+					</ee:message>
+					<ee:variables>
+						<ee:set-variable variableName="httpStatus"><![CDATA['400'
+]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+			</when>
+			<otherwise>
+				<ee:transform doc:name="Transform Message" doc:id="aa589755-91a4-426c-a264-3651b8e08663">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+				<logger level="INFO" doc:name="Logger" doc:id="6088a908-927e-4716-911f-22c45ad6cae5" message="#[payload]" />
+			</otherwise>
+		</choice>
+	</flow>
+	<flow name="updateAccount" doc:id="e28a3ed9-1f4a-4bbc-957e-0d9d4d336682" >
+		<!-- <http:listener doc:name="PUT /customer/account/{accountNumber}" doc:id="ac755d61-4ede-456a-b370-b7da7313eb80" config-ref="HTTP_Listener_config" path="/customer/account/{accountNumber}" allowedMethods="PUT">
+			<http:response statusCode="#[vars.httpStatus default 200]" />
+			<http:error-response statusCode="#[vars.httpStatus default 500]" >
+				<http:body ><![CDATA[#[payloa]]]></http:body>
+			</http:error-response>
+		</http:listener> -->
+		<flow-ref doc:name="getSfdcAccountId" doc:id="06cf5fce-a6d3-4a55-bfbf-0abbf5b28658" name="getSfdcAccountId"/>
+		<logger level="INFO" doc:name="Logger" doc:id="a9b523ff-d297-4659-a4fc-0735fcfee4ec" message="#['Account ID :: ' ++ (vars.accountId[0] default &quot;&quot;)]"/>
+		<choice doc:name="Choice" doc:id="f565993c-fa10-4124-801d-cf922c54ba6c" >
+			<when expression="#[(sizeOf(vars.varQuerySfAccountRes as Array) &gt; 0)]">
+				<ee:transform doc:name="Transform Message" doc:id="4b438772-84bd-4f90-bb78-323a0b022b76">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/java
+---
+[{
+	Id: vars.varQuerySfAccountRes.Id[0] as String,
+	Name: payload.accountName,
+	Type: payload."type",
+	BillingStreet: payload.address,
+	BillingCity: payload.city,
+	BillingState: payload.state,
+	BillingPostalCode: payload.postal,
+	BillingCountry: payload.country,
+	Phone: payload.phone,
+	AccountNumber: payload.accountNumber
+}]]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+				<salesforce:update doc:name="Update" doc:id="689e6520-c109-42cd-89fb-c7f37f85e84d" config-ref="Salesforce_Config" type="Account">
+					<reconnect />
+				</salesforce:update>
+				<ee:transform doc:name="Transform Message" doc:id="7f23db02-b149-4849-8c0f-6093447ebde1">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+					<ee:variables >
+						<ee:set-variable variableName="httpStatus" ><![CDATA['200']]></ee:set-variable>
+					</ee:variables>
+		</ee:transform>
+			</when>
+			<otherwise >
+				<ee:transform doc:name="Transform Message" doc:id="2a5e9ada-b9b4-4124-93ee-4a82297f30a2" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message:"No Accounts Found for " ++ vars.accountNumber as String ++ " to update."
+}]]></ee:set-payload>
+					</ee:message>
+					<ee:variables >
+						<ee:set-variable variableName="httpStatus" ><![CDATA['200']]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+			</otherwise>
+		</choice>
+	</flow>
+	<flow name="deletAccount" doc:id="9ba2d87b-6dba-4871-b1c6-1c8e168a970a">
+		<!-- <http:listener doc:name="DELETE /customer/account/{accountNumber}" doc:id="8292fd87-0642-4c1c-b714-8071d5f407e0" config-ref="HTTP_Listener_config" path="/customer/account/{accountNumber}" allowedMethods="DELETE">
+			<http:response statusCode="#[vars.httpStatus default 200]" />
+			<http:error-response statusCode="#[vars.httpStatus default 500]" />
+		</http:listener> -->
+		<flow-ref doc:name="getSfdcAccountId" doc:id="4c91f13b-546d-41b8-858e-5ca0dd05310d" name="getSfdcAccountId"/>
+		<logger level="INFO" doc:name="Logger" doc:id="a35046e3-33ca-48cc-81d6-36dc0e8697db" message="#['Account ID to delete :: ' ++ (vars.accountId[0] default &quot;&quot;)]" />
+		<choice doc:name="Choice" doc:id="fb642b58-6b02-42fe-8adf-5b018086aad2" >
+			<when expression="#[(sizeOf(vars.varQuerySfAccountRes as Array) &gt; 0)]">
+				<salesforce:delete doc:name="Delete" doc:id="8a09a209-f3d3-4337-910b-973dcdde9ac9" config-ref="Salesforce_Config">
+			<salesforce:delete-ids><![CDATA[#[vars.varQuerySfAccountRes.Id]]]></salesforce:delete-ids>
+		</salesforce:delete>
+				<choice doc:name="Choice" doc:id="842a5294-5ea3-4ddc-802e-da93f76aa196" >
+					<when expression="#[(sizeOf(payload[0].errors as Array) &gt; 0)]">
+						<ee:transform doc:name="Transform Message" doc:id="b6be6608-fee8-409f-af13-5ef90985c964">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"errorMessage": "Error deleting account " ++ vars.accountNumber,
+	"errors": payload
+}]]></ee:set-payload>
+			</ee:message>
+					<ee:variables>
+						<ee:set-variable variableName="httpStatus"><![CDATA['200']]></ee:set-variable>
+					</ee:variables>
+		</ee:transform>
+					</when>
+					<otherwise>
+						<ee:transform doc:name="Transform Message" doc:id="2e85c4db-365f-47ce-8c86-857b68c16909" >
+							<ee:message >
+								<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message": "Account - " ++ (vars.accountNumber as String ) ++ " has been deleted successfully."
+}]]></ee:set-payload>
+							</ee:message>
+							<ee:variables >
+								<ee:set-variable variableName="httpStatus" ><![CDATA['200']]></ee:set-variable>
+							</ee:variables>
+						</ee:transform>
+					</otherwise>
+				</choice>
+			</when>
+			<otherwise>
+				<ee:transform doc:name="Transform Message" doc:id="bd0f6a81-c823-4e4e-b68c-f41bef7d5db8" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message:"No Accounts Found for " ++ vars.accountNumber as String ++ " to delete."
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<logger level="INFO" doc:name="Logger" doc:id="fd927c2b-f8c1-4895-a283-97abd4fa70c3" message="#[payload]"/>
+			</otherwise>
+		</choice>
+	</flow>
+	<sub-flow name="getSfdcAccountId" doc:id="1b9482aa-a4e7-4e47-91e6-6e09904ce413" >
+		<set-variable value='#[attributes.uriParams.accountNumber]' doc:name="accountNumber" doc:id="5ed6444c-3df1-4295-b665-bef6debad655" variableName="accountNumber" />
+		<salesforce:query doc:name="Query" doc:id="4db355c2-8608-4467-a969-b27e9d855d39" config-ref="Salesforce_Config" target="varQuerySfAccountRes">
+			<salesforce:salesforce-query >select id from Account
+where AccountNumber = ':accountNumber'</salesforce:salesforce-query>
+			<salesforce:parameters ><![CDATA[#[output application/java
+---
+{
+	"accountNumber" : vars.accountNumber default "" as String
+}]]]></salesforce:parameters>
+		</salesforce:query>
+	</sub-flow>
+</mule>

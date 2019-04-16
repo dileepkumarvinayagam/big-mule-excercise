@@ -1,0 +1,97 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<types:mule xmlns:types="http://www.mulesoft.org/schema/mule/types">
+  <types:catalog>
+    <types:type name="account_json" format="json">
+      <types:shape format="weave" example="examples/account.json"><![CDATA[%dw 2.0
+type account_json = {|
+  id: String, 
+  accountNumber: String, 
+  accountName: String, 
+  address: String, 
+  city: String, 
+  state: String, 
+  postal: String, 
+  country: String, 
+  phone: String, 
+  "type": String
+|} {"MetadataFormat": "json",
+"example": "{\"id\":\"1\",\"accountNumber\":\"CC978213\",\"accountName\":\"GenePoint\",\"address\":\"345 Shoreline Park\",\"city\":\"Mountain View\",\"state\":\"CA\",\"postal\":\"94043\",\"country\":\"USA\",\"phone\":\"(650) 867-3450\",\"type\":\"Customer - Channel\"}"}
+
+]]></types:shape>
+    </types:type>
+    <types:type name="accounts_json" format="json">
+      <types:shape format="weave" example="examples/accounts.json"><![CDATA[%dw 2.0
+type accounts_json = Array<{|
+  id: String, 
+  accountNumber: String, 
+  accountName: String, 
+  address: String, 
+  city: String, 
+  state: String, 
+  postal: String, 
+  country: String, 
+  phone: String, 
+  "type": String
+|}> {"MetadataFormat": "json",
+"example": "[{\"id\":\"1\",\"accountNumber\":\"CC978213\",\"accountName\":\"GenePoint\",\"address\":\"345 Shoreline Park\",\"city\":\"Mountain View\",\"state\":\"CA\",\"postal\":\"94043\",\"country\":\"USA\",\"phone\":\"(650) 867-3450\",\"type\":\"Customer - Channel\"},{\"id\":\"2\",\"accountNumber\":\"CD656092\",\"accountName\":\"Burlington Textiles Corp of America\",\"address\":\"525 S. Lexington Ave\",\"city\":\"Burlington\",\"state\":\"NC\",\"postal\":\"27215\",\"country\":\"USA\",\"phone\":\"(336) 222-7000\",\"type\":\"Customer - Direct\"},{\"id\":\"3\",\"accountNumber\":\"CD736025\",\"accountName\":\"University of Arizona\",\"address\":\"888 N Euclid\",\"city\":\"Tucson\",\"state\":\"AZ\",\"postal\":\"85721\",\"country\":\"USA\",\"phone\":\"(520) 773-9050\",\"type\":\"Customer - Channel\"}]"}
+
+]]></types:shape>
+    </types:type>
+    <types:type name="accountNumber" format="java">
+      <types:shape format="raml"><![CDATA[#%RAML 1.0 DataType
+type: string]]></types:shape>
+    </types:type>
+    <types:type name="InputAttributes" format="java">
+      <types:shape format="java" element="org.mule.extension.http.api.HttpRequestAttributes"/>
+    </types:type>
+  </types:catalog>
+  <types:enrichment select="#a68ee763-0912-468f-aff7-21ef81b55456">
+    <types:processor-declaration>
+      <types:output-event>
+        <types:message>
+          <types:payload type="account_json"/>
+        </types:message>
+      </types:output-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#03928524-1e19-47ae-b226-9c14d7ea2a9f">
+    <types:processor-declaration>
+      <types:output-event>
+        <types:message>
+          <types:payload type="account_json"/>
+        </types:message>
+      </types:output-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#4b438772-84bd-4f90-bb78-323a0b022b76">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="account_json"/>
+        </types:message>
+        <types:variables>
+          <types:variable name="accountNumber" type="accountNumber"/>
+        </types:variables>
+      </types:input-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#5ed6444c-3df1-4295-b665-bef6debad655">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:attributes type="InputAttributes"/>
+        </types:message>
+      </types:input-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#7a1a7bee-81fc-42d0-8ad9-42d2f9589e3c"/>
+  <types:enrichment select="#ae765465-7c98-4894-bfe2-7d9fe29fc686">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="account_json"/>
+        </types:message>
+      </types:input-event>
+    </types:processor-declaration>
+  </types:enrichment>
+</types:mule>

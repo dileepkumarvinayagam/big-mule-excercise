@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:munit="http://www.mulesoft.org/schema/mule/munit" xmlns:munit-tools="http://www.mulesoft.org/schema/mule/munit-tools"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xsi:schemaLocation="
+		http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+		http://www.mulesoft.org/schema/mule/munit http://www.mulesoft.org/schema/mule/munit/current/mule-munit.xsd
+		http://www.mulesoft.org/schema/mule/munit-tools  http://www.mulesoft.org/schema/mule/munit-tools/current/mule-munit-tools.xsd">
+	<munit:config name="big-munit-test-suite-getAllAccounts.xml" />
+	<munit:test name="getAllAccounts_valid_test" description="Test" doc:id="cce762c6-e8c1-45ce-8903-16891f78d505" >
+		<munit:execution >
+			<flow-ref doc:name="getAllAccountsFlow" doc:id="c45b0beb-64ff-42e2-9b3b-3b2004c57cab" name="getAllAccountsFlow"/>
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:assert-that doc:name="Assert that" doc:id="7ce079e0-a0a4-45c5-911f-5729982b6fca" expression="#[sizeOf(payload as Array)]" is="#[MunitTools::not(MunitTools::equalTo(0))]"/>
+		</munit:validation>
+	</munit:test>
+	
+	<munit:test name="getByAccountNumber_invalid_test" description="Test" doc:id="5f15f374-502f-47c2-b2a9-2175f04c8893" >
+		<munit:execution >
+			<munit:set-event doc:name="Set Event" doc:id="2783665e-5407-4556-b349-3e030f364478">
+				<munit:attributes value="#[{uriParams : {'accountNumber' :'INVALID_ACCOUNT'}}]" />
+			</munit:set-event>
+			<flow-ref doc:name="getByAccountNumber" doc:id="b292c4f8-5a7a-4eb2-939e-564de389a438" name="getByAccountNumber"/>
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:assert-that doc:name="Validate Response for Invalid Account" doc:id="48b203d1-3671-43b9-b47d-51be16792fe3" expression="#[payload.message]" is="#[MunitTools::notNullValue()]" message='#["No Accounts Found for INVALID_ACCOUNT"]' />
+		</munit:validation>
+	</munit:test>
+	
+	<munit:test name="getByAccountNumber_valid_test" description="MUnit Test" doc:id="51d3362a-c9f3-429d-aeb0-4073430e3ec6" >
+		<munit:execution >
+			<munit:set-event doc:name="Set Event" doc:id="59a79bb1-d32b-45c5-8f43-fe72e91ecfe9" >
+				<munit:attributes value="#[{uriParams : {'accountNumber' :'INVALID_ACCOUNT'}}]" />
+			</munit:set-event>
+			<flow-ref doc:name="getByAccountNumber" doc:id="a8feb4e5-effe-4317-b0ab-a46221ba1da6" name="getByAccountNumber"/>
+		</munit:execution>
+		<munit:validation>
+			<munit-tools:assert-that doc:name="Assert that" doc:id="361fa1fe-5f8e-4fd2-a1f1-4e0ee43eb576" expression="#[payload]" is="#[MunitTools::notNullValue()]" message="#['{
+    &quot;accountNumber&quot;: &quot;AC_TST_001&quot;,
+    &quot;accountName&quot;: &quot;Account added for Mule Testing&quot;,
+    &quot;address&quot;: &quot;111 Yonge St&quot;,
+    &quot;city&quot;: &quot;Toronto&quot;,
+    &quot;state&quot;: &quot;ON&quot;,
+    &quot;postal&quot;: &quot;M5C 1T4&quot;,
+    &quot;country&quot;: &quot;Canada&quot;,
+    &quot;phone&quot;: &quot;(650) 867-3451&quot;,
+    &quot;type&quot;: &quot;Customer - Channel&quot;
+}']"/>
+		</munit:validation>
+	</munit:test>
+	
+	<munit:test name="deletAccount_invalid_test" description="Test" doc:id="decf6bd9-ac3b-4c05-ad8a-64dde5f1ce84" >
+		<munit:execution >
+			<munit:set-event doc:name="Set Event" doc:id="cfc6ae22-645f-482b-a673-71c9b39372a6" >
+				<munit:attributes value="#[{uriParams : {'accountNumber' :'INVALID_ACCOUNT'}}]" />
+			</munit:set-event>
+			<flow-ref doc:name="deleteAccount" doc:id="cd28bd6f-4018-42a3-9941-d21777f30833" name="deletAccount"/>
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:assert-that doc:name="Assert that" doc:id="ba8dd003-a4d5-440e-82a5-45d5b3e3e5e8" expression="#[payload.message]" message='#["No Accounts Found for INVALID_ACCOUNT to delete."]' is="#[MunitTools::notNullValue()]"/>
+		</munit:validation>
+	</munit:test>
+	
+
+</mule>

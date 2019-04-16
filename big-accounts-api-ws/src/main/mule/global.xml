@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties"
+	xmlns:tls="http://www.mulesoft.org/schema/mule/tls" xmlns:spring="http://www.mulesoft.org/schema/mule/spring"
+	xmlns:mule-ss="http://www.mulesoft.org/schema/mule/spring-security"
+	
+	
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/spring-security http://www.mulesoft.org/schema/mule/spring-security/current/mule-spring-security.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/spring http://www.mulesoft.org/schema/mule/spring/current/mule-spring.xsd
+http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd
+http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd">
+	<salesforce:sfdc-config name="Salesforce_Config" doc:name="Salesforce Config" doc:id="46d43dfa-b30a-425d-8bf0-c59ba1b9b9ce" >
+		<salesforce:basic-connection username="${secure::sfdc.username}" password="${secure::sfdc.password}" securityToken="${secure::sfdc.token}" >
+			<reconnection >
+				<reconnect />
+			</reconnection>
+		</salesforce:basic-connection>
+	</salesforce:sfdc-config>
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="e5d0611c-c65b-4da8-8f1e-1f72bb9d58b8" >
+		<http:listener-connection host="0.0.0.0" port="${https.port}" protocol="HTTPS">
+			<tls:context >
+				<tls:key-store type="jks" path="keystore.jks" alias="mule" keyPassword="password" password="password" />
+			</tls:context>
+		</http:listener-connection>
+	</http:listener-config>
+	<configuration doc:name="Configuration" doc:id="f46a6fd5-6071-47c3-b621-1e0ca90cca2a" defaultErrorHandler-ref="globalError_Handler" />
+	<spring:config name="Spring_Config" doc:name="Spring Config" doc:id="0aa71608-0e92-4705-8c29-e8c75dcc7a3f" files="beans.xml" />
+	<spring:security-manager doc:name="Spring Security manager" doc:id="c672a672-98de-4de0-8d99-4eb1ea3b875c" >
+		<spring:delegate-security-provider name="memory-provider" delegate-ref="authenticationManager" />
+	</spring:security-manager>
+	<secure-properties:config name="Secure_Properties_Config" doc:name="Secure Properties Config" doc:id="f9db5663-a7f3-4872-b62b-bca8583a232b" file="security-${env}.properties" key="${secret.key}" >
+	</secure-properties:config>
+	<configuration-properties doc:name="Configuration properties" doc:id="075a5b66-9707-4f46-bd3d-d0ca36d2e786" file="config-${env}.yaml"/>
+	<error-handler name="globalError_Handler" doc:id="a59098b1-af4b-43a6-a6b6-a7bc822d254b" >
+		<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="2284c117-a0b4-4540-b02f-2d3b2a7a2ca9" type="APP:INVALID_ACCOUNT_NUMBER">
+			<logger level="INFO" doc:name="INVALID_ACCOUNT_NUMBER Error" doc:id="8df10380-56da-4d22-ae3e-50d3be8f4c56"  message="#[payload]"/>
+			<ee:transform doc:name="Transform Message" doc:id="38b1a09b-3674-4465-a1e9-cec63a21b116" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message": error.description
+}]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<set-variable value="400" doc:name="httpStatus" doc:id="6c6b934f-c324-4271-9397-fce961800b76" variableName="httpStatus"/>
+		</on-error-continue>
+		<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="a627077b-735b-4be7-807c-bae8f5f9d3b4" type="MULE:SECURITY">
+			<logger level="INFO" doc:name="Logger" doc:id="4fff4fdf-ca1d-4d82-81bc-b8153e19a592" message="#[payload]" />
+			<ee:transform doc:name="Transform Message" doc:id="dc41262a-f538-4aac-854e-b344a588221a">
+				<ee:message>
+					<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"errorMessage": "User doesnt have privileges to access this method",
+	"errorDescription": error.description
+}]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<set-variable value="401" doc:name="httpStatus" doc:id="d603d923-9051-449c-9ba1-43547a5ed10b" variableName="httpStatus" />
+		</on-error-continue>
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="d3fe677f-e046-4837-9910-b61884624873" type="SALESFORCE:CONNECTIVITY">
+			<logger level="INFO" doc:name="SALESFORCE:CONNECTIVITY Error" doc:id="9ef57771-5103-415f-8770-d3b71de8b202" message="#[payload]" />
+			<ee:transform doc:name="Transform Message" doc:id="7a1a7bee-81fc-42d0-8ad9-42d2f9589e3c">
+				<ee:message>
+					<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"errorMessage": "Error connecting to Salesforce.",
+	"errorDescription": error.description
+}]]></ee:set-payload>
+				</ee:message>
+				<ee:variables>
+				</ee:variables>
+			</ee:transform>
+			<set-variable value="" doc:name="httpStatus" doc:id="3b6f1218-fed3-41da-80e6-4f3f9325bc92" variableName="500"/>
+		</on-error-propagate>
+		
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="20ec04ae-5680-4d3e-ad50-75cc6bea43c6" type="ANY">
+			<logger level="INFO" doc:name="Global Error Handler" doc:id="396c6692-6bd7-4b54-a535-6eb127de04f5" message="#[payload]" />
+			<ee:transform doc:name="Transform Message" doc:id="dcdd45c1-8126-40b6-821a-cea2f63ddc20">
+				<ee:message>
+					<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"errorMessage": "Error connecting to Salesforce.",
+	"errorDescription": error.description
+}]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<set-variable value="500" doc:name="httpStatus" doc:id="f2be0253-34a8-4cd3-9226-b77788c93000" variableName="httpStatus" />
+		</on-error-propagate>
+	</error-handler>
+</mule>
