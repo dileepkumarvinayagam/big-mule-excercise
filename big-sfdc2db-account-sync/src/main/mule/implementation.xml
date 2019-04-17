@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce"
+	xmlns:os="http://www.mulesoft.org/schema/mule/os"
+	xmlns:batch="http://www.mulesoft.org/schema/mule/batch" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/batch/current/mule-batch.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<flow name="big-sfdc2db-account-sync-Flow" doc:id="e6fbb3ee-6e4f-4b13-b584-078d30e013c7" >
+		<scheduler doc:name="Scheduler" doc:id="bf776eca-16b6-410a-9019-c4282c226e32" >
+			<scheduling-strategy >
+				<fixed-frequency frequency="${scheduler.frequency}" timeUnit="SECONDS" startDelay="${scheduler.startDelay}"/>
+			</scheduling-strategy>
+		</scheduler>
+		<os:retrieve doc:name="Retrieve Sync State" doc:id="c4c330a3-2f3d-475d-8b5f-e336e52063d0" key="syncState" objectStore="syncState" target="syncState">
+			<os:default-value ><![CDATA[#['syncFromSalesforce']]]></os:default-value>
+		</os:retrieve>
+		<logger level="INFO" doc:name="Logger" doc:id="39e64975-7435-4d01-b653-585942157719" message="#['syncState :: ' ++ vars.syncState]"/>
+		<choice doc:name="Choice" doc:id="bc900211-fb03-482e-86bb-8103ad47182d" >
+			<when expression="#[(vars.syncState != 'running' and vars.syncState == 'syncFromSalesforce') or vars.syncState == null]">
+				<logger level="INFO" doc:name="Sync from SFDC to DB" doc:id="1ec08ae0-5345-4942-b4a6-180b9561b255" message="Synchronisation from SFDC to DB has been triggered" />
+				<os:store doc:name="Set sync state to running" doc:id="ca309551-a396-4f4b-867a-ccee96c506c5" key="syncState" objectStore="syncState">
+					<os:value ><![CDATA[#['running']]]></os:value>
+				</os:store>
+				<flow-ref doc:name="querySalesforceFlow" doc:id="1771476d-e5a2-48c6-85f5-30023383c52a" name="querySalesforceFlow"/>
+				<flow-ref doc:name="syncFromSalesforceToDatabase" doc:id="559b3540-780c-416f-bd89-9f73c23fd2bf" name="syncFromSalesforceToDatabase"/>
+			</when>
+			<otherwise >
+				<logger level="INFO" doc:name="Batch running" doc:id="df726da1-8f8a-40bf-9c1f-1ed686bcda41" message="Synchronisation in progress"/>
+			</otherwise>
+		</choice>
+	</flow>
+	<flow name="querySalesforceFlow" doc:id="fa4f33cb-e018-45d0-84b7-4ce303f838e2" >
+		<os:retrieve doc:name="Retrieve lastQueryDateSfdc" doc:id="0e7c85a9-d876-40ec-b1cf-e13c345d1efe" key="watermark" target="lastQueryDateSFDC" objectStore="watermarkStoreSFDC">
+			<os:default-value ><![CDATA[#['2018-01-02T15:53:00Z']]]></os:default-value>
+		</os:retrieve>
+		<logger level="INFO" doc:name="Logger" doc:id="0ff8bd73-b0b4-4793-a9a7-15a500a5f355" message="#['Watermark ::' ++ vars.lastQueryDateSFDC]"/>
+		<salesforce:query doc:name="Query Accounts from Salesforce" doc:id="9ffa9f55-8276-48d5-99a6-9c30e42615f2" config-ref="Salesforce_Config" >
+			<salesforce:salesforce-query >SELECT AccountNumber, AccountSource, AnnualRevenue, BillingCity, BillingCountry, BillingPostalCode, BillingState, BillingStreet, Description, Fax, Id, Industry, LastModifiedById, LastModifiedDate, Name, NumberOfEmployees, OwnerId, Ownership, ParentId, Phone, Rating, ShippingCity, ShippingCountry, ShippingPostalCode, ShippingState, ShippingStreet, Sic, SicDesc, Site, TickerSymbol, Type, Website FROM Account WHERE LastModifiedDate &gt; :lastModifiedDate ORDER BY LastModifiedDate ASC LIMIT 300</salesforce:salesforce-query>
+			<salesforce:parameters ><![CDATA[#[output application/java
+---
+{
+	"lastModifiedDate" : vars.lastQueryDateSFDC
+}]]]></salesforce:parameters>
+		</salesforce:query>
+		<logger level="INFO" doc:name="Logger" doc:id="5eac6000-c1c7-4a4b-bfaf-3ca007880160" message="#['Input SFDC data: ' ++ write(payload, 'application/json', {'indent': false})]" />
+		<os:store doc:name="Store lastQueryDateSfdc" doc:id="355a09b4-f4bc-48c0-b314-b5256a752206" key="watermark" failOnNullValue="false" objectStore="watermarkStoreSFDC">
+			<os:value ><![CDATA[#[max(payload map $.LastModifiedDate)]]]></os:value>
+		</os:store>
+		<logger level="INFO" doc:name="Logger" doc:id="e091fa9e-e575-48ca-8eb2-c2398775d9b1" message="'Updated Watermark from Salesforce retrieve'"/>
+	</flow>
+	
+	<flow name="syncFromSalesforceToDatabase" doc:id="f2d555a7-c167-4dc9-be76-510f81072891" >
+		<batch:job jobName="syncFromSalesforceToDatabaseBatch" doc:id="a0d22caa-3384-46d4-8c66-150f333f8a86" >
+			<batch:process-records >
+				<batch:step name="getAccountFromDatabaseStep" doc:id="246db899-994d-4ef2-821e-f9f19716165c" >
+					<db:select doc:name="Select Account from DB" doc:id="574544ef-33ce-4280-b890-87336543429b" config-ref="Database_Config" target="IdDateInDB" >
+						<db:sql >SELECT Id, LastModifiedDate FROM Account WHERE AccountNumber = :accountNumber</db:sql>
+						<db:input-parameters ><![CDATA[#[{'accountNumber' : payload.AccountNumber}]]]></db:input-parameters>
+					</db:select>
+					<ee:transform doc:name="Set Id and LastModifiedDate from matching account" doc:id="15ace0dd-23df-488b-9b88-43ab182176b9" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+payload ++ {
+	IdDB: if(sizeOf(vars.IdDateInDB) > 0) vars.IdDateInDB[0].Id else null, 
+	LastModifiedDateDB: if(sizeOf(vars.IdDateInDB) > 0) vars.IdDateInDB[0].LastModifiedDate else null
+}]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+					<remove-variable doc:name="Remove Variable IdDateInDB" doc:id="47b1c3c7-0ea0-4031-a6bf-499f21ef38b1" variableName="IdDateInDB" />
+				</batch:step>
+				<batch:step name="insertAccountToDatabase" doc:id="e405c447-a9e3-4b93-9e70-15c632dc495f" acceptExpression="payload.IdDB == null" >
+					<batch:aggregator doc:name="Batch Aggregator" doc:id="2c4cc639-12b6-478a-8504-4d29560a85be" size="${page.size}" >
+						<try doc:name="Try" doc:id="ea0d4af0-1df8-498f-ac59-a310a4c31b1d" >
+							<ee:transform doc:name="Map Accounts for insert" doc:id="1ee59b31-389c-4044-bed1-d434ab87e7cd">
+							<ee:message>
+								<ee:set-payload><![CDATA[%dw 2.0
+output application/java
+---
+payload map ($ - 'LastModifiedDate'
+			   - 'LastModifiedDateDB'
+			   - 'IdDB')]]></ee:set-payload>
+							</ee:message>
+						</ee:transform>
+							<db:bulk-insert doc:name="Bulk insert accounts to Database" doc:id="b8717600-4220-4221-835c-22218bbb4d35" config-ref="Database_Config">
+							<db:sql>INSERT INTO Account (
+	AccountNumber,
+	AccountSource,
+	AnnualRevenue,
+	BillingCity, BillingCountry, BillingPostalCode, BillingState, BillingStreet,
+	Description,
+	Fax, Industry,
+	Name,
+	NumberOfEmployees,
+	Phone, Rating, ShippingCity, ShippingCountry, ShippingPostalCode, ShippingState, ShippingStreet,
+	Type,
+	SalesforceId,
+	LastModifiedById,
+	LastModifiedDate
+) VALUES (
+	:AccountNumber,
+	:AccountSource,
+	:AnnualRevenue,
+	:BillingCity, :BillingCountry, :BillingPostalCode, :BillingState, :BillingStreet,
+	:Description,
+	:Fax, :Industry,
+	:Name,
+	:NumberOfEmployees,
+	:Phone, :Rating, :ShippingCity, :ShippingCountry, :ShippingPostalCode, :ShippingState, :ShippingStreet,
+	:Type,
+	:Id,
+	CURRENT_USER(),
+	CURRENT_TIMESTAMP()
+)</db:sql>
+						</db:bulk-insert>
+							<logger level="INFO" doc:name="Log insert" doc:id="1a50652d-a277-4fa0-9b5f-9509b0554c5c" message="Insert in DB: #[payload]" />
+							<error-handler >
+								<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="a6894259-e62a-4c30-8271-9671dd6ea019" >
+									<logger level="INFO" doc:name="Logger" doc:id="3c233d18-eab9-450d-b1b8-6c076690549e" message="Error occured in insertAccountToDatabase :: #[error]"/>
+								</on-error-continue>
+							</error-handler>
+						</try>
+					</batch:aggregator>
+				</batch:step>
+				<batch:step name="updateAccountInDatabase" doc:id="b51c82c2-5b0c-4b46-9c75-981058fd3456" acceptExpression="payload.IdDB != null  and (payload.LastModifiedDateDB &lt; payload.LastModifiedDate)" >
+					<batch:aggregator doc:name="Batch Aggregator" doc:id="0abd1aa3-d1af-49b4-a0f9-8233c9bfad5d" size="${page.size}" >
+						<try doc:name="Try" doc:id="f2247b4a-0b1b-4c54-85b8-b467df190fa3" >
+							
+							<db:bulk-update doc:name="Bulk update accounts in Database" doc:id="3f4d51b1-c436-4423-a354-1de126539a3f" config-ref="Database_Config">
+							<db:sql>UPDATE Account SET
+AccountNumber = :AccountNumber, 
+AccountSource = :AccountSource,
+AnnualRevenue = :AnnualRevenue,
+BillingCity = :BillingCity, BillingCountry = :BillingCountry , BillingPostalCode = :BillingPostalCode , BillingState = :BillingState, BillingStreet = :BillingStreet,
+Name = :Name,
+Description = :Description,  
+NumberOfEmployees = :NumberOfEmployees,
+Phone = :Phone, Rating = :Rating, ShippingCity = :ShippingCity, ShippingCountry = :ShippingCountry, ShippingPostalCode = :ShippingPostalCode, ShippingState = :ShippingState, ShippingStreet = :ShippingStreet,
+Type = :Type,	
+LastModifiedDate = CURRENT_TIMESTAMP(),
+LastModifiedById = CURRENT_USER()
+WHERE Id = :IdDB</db:sql>
+						</db:bulk-update>
+							<logger level="INFO" doc:name="Log update" doc:id="7279efd5-a0f8-4436-9962-c6a6cd692f94" message="Update in Database: #[write(payload, 'application/json', {'indent': false})]" />
+							<error-handler >
+								<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="a2b342f7-d163-4861-8073-f457b2a2009e" >
+									<logger level="INFO" doc:name="Logger" doc:id="15605c2a-c85f-4f62-b89b-0ef17df5979a" message="Error occured in updateAccountInDatabase :: #[error]"/>
+								</on-error-continue>
+							</error-handler>
+						</try>
+					</batch:aggregator>
+				</batch:step>
+			</batch:process-records>
+			<batch:on-complete >
+				<os:store doc:name="Set sync state to fromDatabase" doc:id="5d8010ec-e902-4705-b81b-f75a8dba5fb2" key="syncState" objectStore="syncState">
+					<os:value ><![CDATA[#['syncFromSalesforce']]]></os:value>
+				</os:store>
+			</batch:on-complete>
+		</batch:job>
+	</flow>
+
+</mule>

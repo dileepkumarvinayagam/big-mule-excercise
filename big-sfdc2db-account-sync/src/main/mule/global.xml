@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:os="http://www.mulesoft.org/schema/mule/os" xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties"
+	xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd
+http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd">
+	<salesforce:sfdc-config name="Salesforce_Config" doc:name="Salesforce Config" doc:id="116dc2f7-5609-40f0-86b7-17edb9774fc3" >
+		<salesforce:basic-connection username="${secure::sfdc.username}" password="${secure::sfdc.password}" securityToken="${secure::sfdc.token}"/>
+	</salesforce:sfdc-config>
+	<configuration-properties doc:name="Configuration properties" doc:id="c2e96e63-116e-4311-a9e6-6c59872abd75" file="config-${env}.yaml" />
+	<secure-properties:config name="Secure_Properties_Config" doc:name="Secure Properties Config" doc:id="93acae36-4874-4f7e-bcde-7fd58c55472b" file="security-${env}.properties" key="${secret.key}"/>
+	<global-property doc:name="Global Property" doc:id="ee8adbb6-c76a-4aab-bf5d-2d23de0d16b4" name="env" value="dev" />
+	<global-property doc:name="Global Property" doc:id="55d438dd-45c2-40b9-b1be-0c5f4dbaa7b7" name="secret.key" value="BigMule4EncKey01" />
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="42b46184-cdd0-42db-a653-74cc15c73b68" >
+		<db:my-sql-connection host="${db.host}" port="${db.port}" user="${secure::db.user}" password="${secure::db.password}" database="${secure::db.database}" />
+	</db:config>
+	<os:object-store name="watermarkStoreSFDC" doc:name="Object store" doc:id="22e36983-d571-40ee-a718-1d6c15b0ee9c" />
+	<os:object-store name="syncState" doc:name="Object store" doc:id="74253590-da11-467f-afbe-d761a833b2d7" />
+</mule>

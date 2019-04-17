@@ -1,0 +1,19 @@
+scheduler:
+  frequency: "60"
+  startDelay: "0"
+
+db:
+  host: "localhost"
+  port: "3306"
+#  user: "devuser"
+#  password: "welcome1"
+#  database: "training_db"
+  
+# Salesforce default expression for Watermarking e.g. 2018-01-02T15:53:00Z
+watermark:
+  default:
+    expression: "2018-01-02T15:53:00Z"
+
+
+page:
+  size: "100"
