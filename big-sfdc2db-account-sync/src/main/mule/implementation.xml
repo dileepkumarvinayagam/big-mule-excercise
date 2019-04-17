@@ -76,16 +76,6 @@ payload ++ {
 				<batch:step name="insertAccountToDatabase" doc:id="e405c447-a9e3-4b93-9e70-15c632dc495f" acceptExpression="payload.IdDB == null" >
 					<batch:aggregator doc:name="Batch Aggregator" doc:id="2c4cc639-12b6-478a-8504-4d29560a85be" size="${page.size}" >
 						<try doc:name="Try" doc:id="ea0d4af0-1df8-498f-ac59-a310a4c31b1d" >
-							<ee:transform doc:name="Map Accounts for insert" doc:id="1ee59b31-389c-4044-bed1-d434ab87e7cd">
-							<ee:message>
-								<ee:set-payload><![CDATA[%dw 2.0
-output application/java
----
-payload map ($ - 'LastModifiedDate'
-			   - 'LastModifiedDateDB'
-			   - 'IdDB')]]></ee:set-payload>
-							</ee:message>
-						</ee:transform>
 							<db:bulk-insert doc:name="Bulk insert accounts to Database" doc:id="b8717600-4220-4221-835c-22218bbb4d35" config-ref="Database_Config">
 							<db:sql>INSERT INTO Account (
 	AccountNumber,
