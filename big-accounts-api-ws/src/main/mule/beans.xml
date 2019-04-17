@@ -16,10 +16,14 @@
   <ss:authentication-manager alias="authenticationManager">
     <ss:authentication-provider>
       <ss:user-service id="userService">
-        <ss:user name="admin" password="admin" authorities="ROLE_ADMIN" />
+        <!-- <ss:user name="admin" password="admin" authorities="ROLE_ADMIN" /> 
         <ss:user name="joe" password="secret" authorities="ROLE_ADMIN" />
         <ss:user name="user" password="password" authorities="ROLE_DEV" />
-        <ss:user name="monitor" password="monitor" authorities="ROLE_MONITOR" />
+        <ss:user name="monitor" password="monitor" authorities="ROLE_MONITOR" /> -->
+        <ss:user name="admin" password="${secure::admin.user.password}" authorities="ROLE_ADMIN" />
+        <ss:user name="joe" password="${secure::joe.user.password}" authorities="ROLE_ADMIN" />
+        <ss:user name="user" password="${secure::user.password}" authorities="ROLE_DEV" />
+        <ss:user name="monitor" password="${secure::monitor.user.password}" authorities="ROLE_MONITOR" />
       </ss:user-service>
     </ss:authentication-provider>
   </ss:authentication-manager>
