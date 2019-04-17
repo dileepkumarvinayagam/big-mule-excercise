@@ -38,7 +38,7 @@ http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/
 		</os:retrieve>
 		<logger level="INFO" doc:name="Logger" doc:id="0ff8bd73-b0b4-4793-a9a7-15a500a5f355" message="#['Watermark ::' ++ vars.lastQueryDateSFDC]"/>
 		<salesforce:query doc:name="Query Accounts from Salesforce" doc:id="9ffa9f55-8276-48d5-99a6-9c30e42615f2" config-ref="Salesforce_Config" >
-			<salesforce:salesforce-query >SELECT AccountNumber, AccountSource, AnnualRevenue, BillingCity, BillingCountry, BillingPostalCode, BillingState, BillingStreet, Description, Fax, Id, Industry, LastModifiedById, LastModifiedDate, Name, NumberOfEmployees, OwnerId, Ownership, ParentId, Phone, Rating, ShippingCity, ShippingCountry, ShippingPostalCode, ShippingState, ShippingStreet, Sic, SicDesc, Site, TickerSymbol, Type, Website FROM Account WHERE LastModifiedDate &gt; :lastModifiedDate ORDER BY LastModifiedDate ASC LIMIT 300</salesforce:salesforce-query>
+			<salesforce:salesforce-query >SELECT AccountNumber, AccountSource, AnnualRevenue, BillingCity, BillingCountry, BillingPostalCode, BillingState, BillingStreet, Description, Fax, Id, Industry, LastModifiedById, LastModifiedDate, Name, NumberOfEmployees, OwnerId, Ownership, ParentId, Phone, Rating, ShippingCity, ShippingCountry, ShippingPostalCode, ShippingState, ShippingStreet, Sic, SicDesc, Site, TickerSymbol, Type, Website FROM Account WHERE LastModifiedDate &gt; :lastModifiedDate ORDER BY LastModifiedDate ASC</salesforce:salesforce-query>
 			<salesforce:parameters ><![CDATA[#[output application/java
 ---
 {
