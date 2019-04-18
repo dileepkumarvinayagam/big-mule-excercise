@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns:os="http://www.mulesoft.org/schema/mule/os" xmlns:db="http://www.mulesoft.org/schema/mule/db"
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:os="http://www.mulesoft.org/schema/mule/os" xmlns:db="http://www.mulesoft.org/schema/mule/db"
 	xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties"
-	xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+	xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd
 http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd
 http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
@@ -19,4 +21,13 @@ http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/cu
 	</db:config>
 	<os:object-store name="watermarkStoreSFDC" doc:name="Object store" doc:id="22e36983-d571-40ee-a718-1d6c15b0ee9c" />
 	<os:object-store name="syncState" doc:name="Object store" doc:id="74253590-da11-467f-afbe-d761a833b2d7" />
+	<configuration doc:name="Configuration" doc:id="1eab1209-9f57-4e41-9efd-21ed75e12b18" defaultErrorHandler-ref="globalError_Handler" />
+	<error-handler name="globalError_Handler" doc:id="4ab7de95-1cb7-4ff0-bb27-08f39a955a65" >
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="f909cd55-a2a2-47f9-86bd-503f9472957b" type="SALESFORCE:CONNECTIVITY">
+		<logger level="INFO" doc:name="SALESFORCE:CONNECTIVITY Error" doc:id="86653cbd-5c19-42d4-9aa3-4faa51802f05" message="#[error]" />
+		</on-error-propagate>
+		<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="9514b029-245b-41e9-bbbe-4a1bb1c25bd4" type="ANY">
+			<logger level="INFO" doc:name="Logger" doc:id="e410b9c9-3431-4074-a843-ca5e07819717" message="Error occured while Syncing Saleforce account to Database :: #[payload]"/>
+		</on-error-continue>
+	</error-handler>
 </mule>

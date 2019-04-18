@@ -146,7 +146,7 @@ WHERE Id = :IdDB</db:sql>
 				</batch:step>
 			</batch:process-records>
 			<batch:on-complete >
-				<os:store doc:name="Set sync state to fromDatabase" doc:id="5d8010ec-e902-4705-b81b-f75a8dba5fb2" key="syncState" objectStore="syncState">
+				<os:store doc:name="Reset sync state" doc:id="5d8010ec-e902-4705-b81b-f75a8dba5fb2" key="syncState" objectStore="syncState">
 					<os:value ><![CDATA[#['syncFromSalesforce']]]></os:value>
 				</os:store>
 			</batch:on-complete>
